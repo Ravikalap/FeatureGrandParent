@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feature Grandparent</title>
+
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function () {
+                Ext.define('CustomApp', {
+    extend: 'Rally.app.TimeboxScopedApp',
+    scopeType: 'release',
+    comboboxConfig: {
+        fieldLabel: 'Select an timebox:</div>',
+        width: 400
+    },
+    componentCls: 'app',
+    // launch: function() {
+    //     debugger;
+    //     var filters = [], timeboxScope = this.getContext().getTimeboxScope();
+    //     if(timeboxScope) {
+    //         filters.push(timeboxScope.getQueryFilter());
+    //         console.log(filters);
+    //     }
+    //     else {
+    //         console.log("no timeboxscope");           
+    //     }
+    //     // this.board = this.add({
+    //     //     xtype: 'rallycardboard',
+    //     //     storeConfig: {
+    //     //         filters: filters
+    //     //     }
+    //     // });
+    // },
+
+    onTimeboxScopeChange: function(newTimeboxScope) {
+        debugger;
+        this.callParent(arguments);
+        console.log(newTimeboxScope.getQueryFilter());
+        Ext.create('Rally.data.wsapi.Store', {
+            model: 'PortfolioItem/Feature',
+            autoLoad: true,
+            listeners: {
+                load: this._onDataLoaded,
+                scope: this
+            },
+            fetch: ['Rank', 'FormattedID', 'Name', 'Parent', 'c_ProjectID', 'c_ServiceNowID', 'LeafStoryPlanEstimateTotal'],
+            filters: newTimeboxScope.getQueryFilter()
+        });
+    },
+    _onDataLoaded: function (store, records) {
+        this.remove('g1');
+        this.add({
+            xtype: 'rallygrid',
+            itemId: 'g1',
+            editable: false,
+            store: Ext.create('Rally.data.custom.Store', {
+                data: records
+            }),
+            forceFit: true,
+            columnCfgs: [{
+                text: 'Rank',
+                dataIndex: 'Rank'
+            },{
+                xtype: 'templatecolumn',
+                text: 'ID',
+                dataIndex: 'FormattedID',
+                width: 100,
+                tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
+            }, {
+                text: 'Name',
+                dataIndex: 'Name',
+                flex: 1
+            }, {
+                xtype: 'templatecolumn',
+                text: 'Epic',
+                dataIndex: 'Parent',
+                width: 100,
+                flex: 1,
+                tpl: Ext.create('Rally.ui.renderer.template.ParentTemplate')
+            }, {
+                text: 'ProjectID',
+                dataIndex: 'c_ProjectID',
+                width: 60,
+                renderer: function (value, metaData, record) {
+                    //debugger;
+                    if (value === null) {
+                        metaData.style = "background-color: #FFFF00;";
+                        return '';
+                    } else if (value.c_ProjectID === null) {
+                        metaData.style = "background-color: #FFFF00;";
+                        return '';
+                    } else {
+                      if (value !== record.get("Parent").c_ProjectID) {
+                          metaData.style = "background-color: #FFFF00;";
+                      }
+                      return value;
+                    }
+                }
+            }, {
+                text: 'ServiceNowID',
+                dataIndex: 'c_ServiceNowID',
+                flex: 1
+            }, {
+                text: 'Story Points',
+                dataIndex: 'LeafStoryPlanEstimateTotal',
+                flex: 1
+            }]
+        });
+    }    
+});
+
+
+            Rally.launchApp('CustomApp', {
+                name:"Feature Grandparent",
+                parentRepos:"",
+                version:"0.1.1"
+            });
+
+        });
+    </script>
+
+
+
+    <style type="text/css">
+        .app {
+  /* Add app styles here */
+}
+
+    </style>
+</head>
+<body>
+</body>
+</html>
